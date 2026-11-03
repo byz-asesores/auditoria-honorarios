@@ -1,0 +1,6 @@
+.venv/
+venv/
+__pycache__/
+output/
+data/*
+!data/boletas.csv

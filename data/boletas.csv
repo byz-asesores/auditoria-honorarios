@@ -1,0 +1,13 @@
+numero,fecha,rut_emisor,nombre_emisor,rut_receptor,nombre_receptor,monto_bruto,retencion,retiene_receptor
+1001,05/09/2026,11.111.111-1,Camila Rojas Prueba,77.777.777-7,Empresa Ficticia SpA,450000,68625,SI
+7,08/09/2026,39.000.009-K,Diego Fuentes Prueba,88.888.888-8,Comercial Ejemplo Ltda,820000,125050,SI
+15,10/09/2026,22.222.222-2,Valentina Soto Prueba,77.777.777-7,Empresa Ficticia SpA,1200000,183000,SI
+15,12/09/2026,39.000.012-k,Tomás Herrera Prueba,99.999.999-9,Servicios Demo S.A.,300000,45750,SI
+22,15/09/2026,33.333.333-3,Javiera Muñoz Prueba,88.888.888-8,Comercial Ejemplo Ltda,95000,0,NO
+7,18/09/2026,39000009-K,Diego Fuentes Prueba,88.888.888-8,Comercial Ejemplo Ltda,820000,125050,SI
+31,20/09/2026,44.444.444-5,Fernanda Castro Prueba,77.777.777-7,Empresa Ficticia SpA,640000,97600,SI
+40,22/09/2026,55.555.555-5,Benjamín Silva Prueba,99.999.999-9,Servicios Demo S.A.,1500000,225000,SI
+41,2026-09-25,66.666.666-6,Martina López Prueba,88.888.888-8,Comercial Ejemplo Ltda,275000,41938,SI
+52,28/09/2026,39.000.026-K,Ignacio Vera Prueba,77.777.777-7,Empresa Ficticia SpA,510000,77775,SI
+53,03/10/2026,22.222.222-2,Valentina Soto Prueba,99.999.999-9,Servicios Demo S.A.,380000,57950,SI
+60,30/09/2026,11.111.111-1,Camila Rojas Prueba,88.888.888-8,Comercial Ejemplo Ltda,720000,109800,SI
