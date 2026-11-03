@@ -1,7 +1,7 @@
 def normalizar_rut(rut):
     if rut is None:
         return ""
-    return str(rut).replace(".", "").replace(" ", "").strip().lower()
+    return str(rut).replace(".", "").replace(" ", "").strip().upper()
 
 
 def a_entero(valor):

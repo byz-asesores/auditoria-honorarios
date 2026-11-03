@@ -4,7 +4,7 @@ CARPETA_PROYECTO = Path(__file__).resolve().parent.parent
 ARCHIVO_BOLETAS = CARPETA_PROYECTO / "data" / "boletas.csv"
 ARCHIVO_REPORTE = CARPETA_PROYECTO / "output" / "reporte_auditoria.xlsx"
 
-TASA_RETENCION = 0.1375
+TASA_RETENCION = 0.1525
 
 TOLERANCIA_PESOS = 1
 
