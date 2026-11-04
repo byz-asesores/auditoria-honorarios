@@ -9,6 +9,7 @@ COLUMNAS = [
     "nombre_receptor",
     "monto_bruto",
     "retencion",
+    "retiene_receptor",
     "estado",
     "observaciones",
 ]
@@ -16,6 +17,8 @@ COLUMNAS = [
 
 def generar_excel(resultados, ruta):
     df = pd.DataFrame(resultados).reindex(columns=COLUMNAS)
+
     ruta.parent.mkdir(parents=True, exist_ok=True)
     df.to_excel(ruta, index=False, sheet_name="Boletas")
+
     return df
