@@ -18,8 +18,14 @@ def buscar_duplicados(boletas):
         if len(posiciones) > 1:
             for i in posiciones:
                 otras = [str(j + 2) for j in posiciones if j != i]
+
                 duplicadas[i] = (
-                    f"Posible duplicada (ver fila {', '.join(otras)} del CSV)"
+                    f"Posible boleta duplicada: el número "
+                    f"{boletas[i]['numero']} pertenece al mismo "
+                    f"RUT emisor. Revisar también la(s) fila(s) "
+                    f"{', '.join(otras)} del CSV. "
+                    f"Se requiere confirmar si corresponde a "
+                    f"una emisión repetida."
                 )
 
     return duplicadas
