@@ -1,4 +1,3 @@
-
 from utilidades import normalizar_rut
 
 
@@ -37,18 +36,10 @@ def rut_valido(rut):
 def validar_ruts(boleta):
     observaciones = []
 
-    for campo, nombre in [
-        ("rut_emisor", "emisor"),
-        ("rut_receptor", "receptor"),
-    ]:
-        rut = normalizar_rut(boleta[campo])
+    if not rut_valido(boleta["rut_emisor"]):
+        observaciones.append("RUT emisor inválido")
 
-        if not rut_valido(rut):
-            observaciones.append(
-                f"RUT {nombre} inválido: {rut}. "
-                "El dígito verificador informado no coincide "
-                "con el calculado mediante el algoritmo módulo 11."
-            )
+    if not rut_valido(boleta["rut_receptor"]):
+        observaciones.append("RUT receptor inválido")
 
     return observaciones
-
