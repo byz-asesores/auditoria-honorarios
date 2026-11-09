@@ -1,3 +1,4 @@
+
 import pandas as pd
 
 COLUMNAS = [
@@ -16,6 +17,8 @@ COLUMNAS = [
 
 def generar_excel(resultados, ruta):
     df = pd.DataFrame(resultados).reindex(columns=COLUMNAS)
+
     ruta.parent.mkdir(parents=True, exist_ok=True)
     df.to_excel(ruta, index=False, sheet_name="Boletas")
+
     return df
