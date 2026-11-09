@@ -1,3 +1,4 @@
+
 import pandas as pd
 
 COLUMNAS = [
@@ -9,7 +10,6 @@ COLUMNAS = [
     "nombre_receptor",
     "monto_bruto",
     "retencion",
-    "retiene_receptor",
     "estado",
     "observaciones",
 ]
