@@ -10,6 +10,7 @@ COLUMNAS = [
     "nombre_receptor",
     "monto_bruto",
     "retencion",
+    "monto_liquido",
     "estado",
     "observaciones",
 ]
