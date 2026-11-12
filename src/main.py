@@ -2,7 +2,7 @@ from config import ARCHIVO_BOLETAS, ARCHIVO_REPORTE
 from lectura.cargar_boletas import cargar_boletas
 from reportes.excel import generar_excel
 from validaciones.duplicados import buscar_duplicados
-from validaciones.retencion import validar_retencion
+from validaciones.retencion import validar_retencion, validar_monto_liquido
 from validaciones.rut import validar_ruts
 
 
@@ -14,6 +14,7 @@ def auditar(boletas):
         observaciones = []
         observaciones += validar_ruts(boleta)
         observaciones += validar_retencion(boleta)
+        observaciones += validar_monto_liquido(boleta)
         if i in duplicadas:
             observaciones.append(duplicadas[i])
 

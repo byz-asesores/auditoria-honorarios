@@ -21,4 +21,19 @@ def validar_retencion(boleta):
             f"informada {formatear_pesos(informada)})"
         )
         return [mensaje]
+
+    return []
+
+
+def validar_monto_liquido(boleta):
+    esperado = boleta["monto_bruto"] - boleta["retencion"]
+    informado = boleta["monto_liquido"]
+
+    if abs(informado - esperado) > TOLERANCIA_PESOS:
+        mensaje = (
+            f"Líquido no cuadra (esperado {formatear_pesos(esperado)}, "
+            f"informado {formatear_pesos(informado)})"
+        )
+        return [mensaje]
+
     return []
