@@ -47,9 +47,72 @@ def generar_resumen_receptores(resultados):
     return resumen[columnas_resumen]
 
 
+
+def generar_resumen_anual(resultados):
+    columnas_resumen = [
+        "anio",
+        "cantidad_boletas",
+        "boletas_ok",
+        "boletas_revisar",
+        "total_bruto",
+        "total_retenciones",
+        "total_liquido",
+    ]
+
+    df = pd.DataFrame(resultados)
+
+    if df.empty:
+        return pd.DataFrame(columns=columnas_resumen)
+
+    fechas = pd.to_datetime(
+        df["fecha"],
+        format="%d/%m/%Y",
+        errors="coerce",
+    )
+
+    fechas_iso = pd.to_datetime(
+        df["fecha"],
+        format="%Y-%m-%d",
+        errors="coerce",
+    )
+
+    fechas = fechas.fillna(fechas_iso)
+
+    df["anio"] = fechas.dt.year
+    df = df.dropna(subset=["anio"]).copy()
+    df["anio"] = df["anio"].astype(int)
+
+    if df.empty:
+        return pd.DataFrame(columns=columnas_resumen)
+
+    for columna in ("monto_bruto", "retencion", "monto_liquido"):
+        df[columna] = pd.to_numeric(
+            df[columna],
+            errors="coerce",
+        ).fillna(0)
+
+    df["boletas_ok"] = df["estado"].eq("OK").astype(int)
+    df["boletas_revisar"] = df["estado"].eq("REVISAR").astype(int)
+
+    resumen = (
+        df.groupby("anio", as_index=False)
+        .agg(
+            cantidad_boletas=("numero", "size"),
+            boletas_ok=("boletas_ok", "sum"),
+            boletas_revisar=("boletas_revisar", "sum"),
+            total_bruto=("monto_bruto", "sum"),
+            total_retenciones=("retencion", "sum"),
+            total_liquido=("monto_liquido", "sum"),
+        )
+        .sort_values("anio")
+    )
+
+    return resumen[columnas_resumen]
+
 def generar_excel(resultados, ruta):
     df = pd.DataFrame(resultados).reindex(columns=COLUMNAS)
     resumen = generar_resumen_receptores(resultados)
+    resumen_anual = generar_resumen_anual(resultados)
 
     ruta.parent.mkdir(parents=True, exist_ok=True)
 
@@ -60,6 +123,11 @@ def generar_excel(resultados, ruta):
             index=False,
             sheet_name="Resumen por receptor",
         )
+        resumen_anual.to_excel(
+            writer,
+            index=False,
+            sheet_name="Resumen anual",
+        )
         preparar_excel(writer)
 
     return df
@@ -68,6 +136,7 @@ def generar_excel(resultados, ruta):
 def generar_excel_en_memoria(resultados):
     df = pd.DataFrame(resultados).reindex(columns=COLUMNAS)
     resumen = generar_resumen_receptores(resultados)
+    resumen_anual = generar_resumen_anual(resultados)
 
     buffer = BytesIO()
 
@@ -77,6 +146,11 @@ def generar_excel_en_memoria(resultados):
             writer,
             index=False,
             sheet_name="Resumen por receptor",
+        )
+        resumen_anual.to_excel(
+            writer,
+            index=False,
+            sheet_name="Resumen anual",
         )
         preparar_excel(writer)
 
@@ -144,6 +218,25 @@ def formatear_resumen(hoja):
         hoja[f"C{fila}"].number_format = '"$"#,##0'
 
 
+
+def formatear_resumen_anual(hoja):
+    anchos = {
+        "A": 12,
+        "B": 20,
+        "C": 16,
+        "D": 20,
+        "E": 20,
+        "F": 22,
+        "G": 20,
+    }
+
+    aplicar_formato(hoja, anchos)
+
+    for fila in range(2, hoja.max_row + 1):
+        for columna in ("E", "F", "G"):
+            hoja[f"{columna}{fila}"].number_format = '"$"#,##0'
+
 def preparar_excel(writer):
     formatear_boletas(writer.sheets["Boletas"])
     formatear_resumen(writer.sheets["Resumen por receptor"])
+    formatear_resumen_anual(writer.sheets["Resumen anual"])
