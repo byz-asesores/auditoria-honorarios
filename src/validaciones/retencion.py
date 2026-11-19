@@ -11,12 +11,20 @@ def retencion_esperada(boleta):
     if boleta["retiene_receptor"] == "NO":
         return 0
 
-    try:
-        fecha = datetime.strptime(boleta["fecha"], "%d/%m/%Y")
-    except (TypeError, ValueError):
+    fecha_texto = boleta["fecha"]
+    fecha = None
+
+    for formato in ("%d/%m/%Y", "%Y-%m-%d"):
+        try:
+            fecha = datetime.strptime(fecha_texto, formato)
+            break
+        except (TypeError, ValueError):
+            continue
+
+    if fecha is None:
         raise ValueError(
-            f"Fecha de boleta inválida: {boleta['fecha']}. "
-            "Se esperaba DD/MM/AAAA."
+            f"Fecha de boleta inválida: {fecha_texto}. "
+            "Se esperaba DD/MM/AAAA o AAAA-MM-DD."
         )
 
     tasa = TASAS_RETENCION.get(fecha.year)
