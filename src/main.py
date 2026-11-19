@@ -4,6 +4,7 @@ from reportes.excel import generar_excel
 from validaciones.duplicados import buscar_duplicados
 from validaciones.retencion import validar_retencion, validar_monto_liquido
 from validaciones.rut import validar_ruts
+from validaciones.periodo import validar_periodo
 
 
 
@@ -26,6 +27,9 @@ def auditar(boletas):
 
         # Validar RUT
         observaciones += validar_ruts(boleta)
+
+        # Validar período
+        observaciones += validar_periodo(boleta)
 
         # Comprobar que los montos sean válidos
         montos_validos = True
