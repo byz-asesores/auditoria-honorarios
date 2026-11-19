@@ -20,11 +20,31 @@ def cargar_boletas(ruta):
     df = pd.read_csv(ruta, dtype=str, encoding="utf-8")
     df = df[COLUMNAS_USADAS].copy()
 
-    df["monto_bruto"] = df["monto_bruto"].apply(a_entero)
-    df["retencion"] = df["retencion"].apply(a_entero)
-    df["monto_liquido"] = df["monto_liquido"].apply(a_entero)
-
     df["retiene_receptor"] = (
-    df["retiene_receptor"].str.strip().str.upper()
-)
-    return df.to_dict("records")
+        df["retiene_receptor"].fillna("").str.strip().str.upper()
+    )
+
+    boletas = []
+
+    for registro in df.to_dict("records"):
+        errores_monto = []
+
+        for campo in ["monto_bruto", "retencion", "monto_liquido"]:
+            valor = registro[campo]
+
+            if pd.isna(valor) or str(valor).strip() == "":
+                registro[campo] = None
+                continue
+
+            try:
+                registro[campo] = a_entero(valor)
+            except ValueError:
+                registro[campo] = None
+                errores_monto.append(
+                    f"Dato invalido en {campo}: {valor}"
+                )
+
+        registro["_errores_monto"] = errores_monto
+        boletas.append(registro)
+
+    return boletas
