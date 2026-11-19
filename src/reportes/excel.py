@@ -1,7 +1,9 @@
+
 from io import BytesIO
 
 import pandas as pd
-
+from openpyxl.styles import Font, PatternFill, Alignment
+from validaciones.duplicados import obtener_indices_excluidos_de_totales
 COLUMNAS = [
     "numero",
     "fecha",
@@ -16,20 +18,238 @@ COLUMNAS = [
     "observaciones",
 ]
 
+def generar_resumen_receptores(resultados):
+    indices_excluidos = obtener_indices_excluidos_de_totales(resultados)
+
+    resultados_validos = [
+        boleta
+        for i, boleta in enumerate(resultados)
+        if i not in indices_excluidos
+    ]
+
+    df = pd.DataFrame(resultados_validos)
+
+    columnas_resumen = [
+        "rut_receptor",
+        "nombre_receptor",
+        "total_retenido",
+    ]
+
+    if df.empty:
+        return pd.DataFrame(columns=columnas_resumen)
+
+    df["retencion"] = pd.to_numeric(
+        df["retencion"], errors="coerce"
+    ).fillna(0)
+
+    resumen = (
+        df.groupby("rut_receptor", as_index=False, dropna=False)
+        .agg(
+            nombre_receptor=("nombre_receptor", "first"),
+            total_retenido=("retencion", "sum"),
+        )
+    )
+
+    return resumen[columnas_resumen]
+
+
+def generar_resumen_anual(resultados):
+    columnas_resumen = [
+        "anio",
+        "cantidad_boletas",
+        "boletas_ok",
+        "boletas_revisar",
+        "total_bruto",
+        "total_retenciones",
+        "total_liquido",
+    ]
+
+    indices_excluidos = obtener_indices_excluidos_de_totales(resultados)
+
+    resultados_validos = [
+        boleta
+        for i, boleta in enumerate(resultados)
+        if i not in indices_excluidos
+    ]
+
+    df = pd.DataFrame(resultados_validos)
+
+    if df.empty:
+        return pd.DataFrame(columns=columnas_resumen)
+
+    fechas = pd.to_datetime(
+        df["fecha"],
+        format="%d/%m/%Y",
+        errors="coerce",
+    )
+
+    fechas_iso = pd.to_datetime(
+        df["fecha"],
+        format="%Y-%m-%d",
+        errors="coerce",
+    )
+
+    fechas = fechas.fillna(fechas_iso)
+
+    df["anio"] = fechas.dt.year
+    df = df.dropna(subset=["anio"]).copy()
+    df["anio"] = df["anio"].astype(int)
+
+    if df.empty:
+        return pd.DataFrame(columns=columnas_resumen)
+
+    for columna in ("monto_bruto", "retencion", "monto_liquido"):
+        df[columna] = pd.to_numeric(
+            df[columna],
+            errors="coerce",
+        ).fillna(0)
+
+    df["boletas_ok"] = df["estado"].eq("OK").astype(int)
+    df["boletas_revisar"] = df["estado"].eq("REVISAR").astype(int)
+
+    resumen = (
+        df.groupby("anio", as_index=False)
+        .agg(
+            cantidad_boletas=("numero", "size"),
+            boletas_ok=("boletas_ok", "sum"),
+            boletas_revisar=("boletas_revisar", "sum"),
+            total_bruto=("monto_bruto", "sum"),
+            total_retenciones=("retencion", "sum"),
+            total_liquido=("monto_liquido", "sum"),
+        )
+        .sort_values("anio")
+    )
+
+    return resumen[columnas_resumen]
 
 def generar_excel(resultados, ruta):
     df = pd.DataFrame(resultados).reindex(columns=COLUMNAS)
+    resumen = generar_resumen_receptores(resultados)
+    resumen_anual = generar_resumen_anual(resultados)
 
     ruta.parent.mkdir(parents=True, exist_ok=True)
-    df.to_excel(ruta, index=False, sheet_name="Boletas")
+
+    with pd.ExcelWriter(ruta, engine="openpyxl") as writer:
+        df.to_excel(writer, index=False, sheet_name="Boletas")
+        resumen.to_excel(
+            writer,
+            index=False,
+            sheet_name="Resumen por receptor",
+        )
+        resumen_anual.to_excel(
+            writer,
+            index=False,
+            sheet_name="Resumen anual",
+        )
+        preparar_excel(writer)
 
     return df
 
 
 def generar_excel_en_memoria(resultados):
     df = pd.DataFrame(resultados).reindex(columns=COLUMNAS)
+    resumen = generar_resumen_receptores(resultados)
+    resumen_anual = generar_resumen_anual(resultados)
 
     buffer = BytesIO()
-    df.to_excel(buffer, index=False, sheet_name="Boletas")
+
+    with pd.ExcelWriter(buffer, engine="openpyxl") as writer:
+        df.to_excel(writer, index=False, sheet_name="Boletas")
+        resumen.to_excel(
+            writer,
+            index=False,
+            sheet_name="Resumen por receptor",
+        )
+        resumen_anual.to_excel(
+            writer,
+            index=False,
+            sheet_name="Resumen anual",
+        )
+        preparar_excel(writer)
 
     return buffer.getvalue()
+
+def aplicar_formato(hoja, anchos):
+    hoja.freeze_panes = "A2"
+    hoja.auto_filter.ref = hoja.dimensions
+    hoja.sheet_view.showGridLines = False
+
+    encabezado = PatternFill(fill_type="solid", fgColor="1F4E78")
+
+    for celda in hoja[1]:
+        celda.fill = encabezado
+        celda.font = Font(bold=True, color="FFFFFF")
+        celda.alignment = Alignment(
+            horizontal="center",
+            vertical="center",
+            wrap_text=True,
+        )
+
+    hoja.row_dimensions[1].height = 30
+
+    for columna, ancho in anchos.items():
+        hoja.column_dimensions[columna].width = ancho
+
+
+def formatear_boletas(hoja):
+    anchos = {
+        "A": 10, "B": 14, "C": 16, "D": 25,
+        "E": 16, "F": 25, "G": 16, "H": 16,
+        "I": 16, "J": 14, "K": 60,
+    }
+
+    aplicar_formato(hoja, anchos)
+
+    for fila in hoja.iter_rows(min_row=2):
+        numero_fila = fila[0].row
+
+        for celda in fila:
+            celda.alignment = Alignment(vertical="top", wrap_text=True)
+
+        hoja.row_dimensions[numero_fila].height = 30
+
+        for columna in ("G", "H", "I"):
+            hoja[f"{columna}{numero_fila}"].number_format = '"$"#,##0'
+
+        estado = hoja[f"J{numero_fila}"]
+
+        if estado.value == "OK":
+            estado.fill = PatternFill(fill_type="solid", fgColor="E2F0D9")
+            estado.font = Font(bold=True, color="375623")
+
+        elif estado.value == "REVISAR":
+            estado.fill = PatternFill(fill_type="solid", fgColor="FCE4D6")
+            estado.font = Font(bold=True, color="C00000")
+
+
+def formatear_resumen(hoja):
+    anchos = {"A": 20, "B": 30, "C": 22}
+
+    aplicar_formato(hoja, anchos)
+
+    for fila in range(2, hoja.max_row + 1):
+        hoja[f"C{fila}"].number_format = '"$"#,##0'
+
+
+
+def formatear_resumen_anual(hoja):
+    anchos = {
+        "A": 12,
+        "B": 20,
+        "C": 16,
+        "D": 20,
+        "E": 20,
+        "F": 22,
+        "G": 20,
+    }
+
+    aplicar_formato(hoja, anchos)
+
+    for fila in range(2, hoja.max_row + 1):
+        for columna in ("E", "F", "G"):
+            hoja[f"{columna}{fila}"].number_format = '"$"#,##0'
+
+def preparar_excel(writer):
+    formatear_boletas(writer.sheets["Boletas"])
+    formatear_resumen(writer.sheets["Resumen por receptor"])
+    formatear_resumen_anual(writer.sheets["Resumen anual"])
