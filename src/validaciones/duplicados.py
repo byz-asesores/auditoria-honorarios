@@ -1,4 +1,3 @@
-
 from utilidades import normalizar_rut
 
 
@@ -24,3 +23,22 @@ def buscar_duplicados(boletas):
                 )
 
     return duplicadas
+
+
+def obtener_indices_excluidos_de_totales(boletas):
+    grupos = {}
+
+    for i, boleta in enumerate(boletas):
+        numero = str(boleta["numero"]).strip()
+        rut_emisor = normalizar_rut(boleta["rut_emisor"])
+
+        clave = (numero, rut_emisor)
+        grupos.setdefault(clave, []).append(i)
+
+    indices_excluidos = set()
+
+    for posiciones in grupos.values():
+        if len(posiciones) > 1:
+            indices_excluidos.update(posiciones[1:])
+
+    return indices_excluidos

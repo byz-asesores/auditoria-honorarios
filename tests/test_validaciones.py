@@ -12,6 +12,10 @@ from validaciones.retencion import (
     validar_retencion,
     validar_monto_liquido,
 )
+from reportes.excel import (
+    generar_resumen_receptores,
+    generar_resumen_anual,
+)
 
 
 def crear_boleta(**cambios):
@@ -111,6 +115,38 @@ class TestAuditoriaGeneral(unittest.TestCase):
         resultados = auditar([boleta])
         self.assertEqual(resultados[0]["estado"], "REVISAR")
 
+class TestResumenSinDuplicados(unittest.TestCase):
+
+    def setUp(self):
+        self.boletas = [
+            crear_boleta(
+                numero="7",
+                fecha="08/09/2026",
+                nombre_receptor="Empresa Ejemplo",
+                estado="OK",
+            ),
+            crear_boleta(
+                numero="7",
+                fecha="18/09/2026",
+                nombre_receptor="Empresa Ejemplo",
+                estado="REVISAR",
+            ),
+        ]
+
+    def test_resumen_receptor_no_suma_duplicados(self):
+        resumen = generar_resumen_receptores(self.boletas)
+
+        self.assertEqual(len(resumen), 1)
+        self.assertEqual(resumen.iloc[0]["total_retenido"], 152500)
+
+    def test_resumen_anual_no_suma_duplicados(self):
+        resumen = generar_resumen_anual(self.boletas)
+
+        self.assertEqual(len(resumen), 1)
+        self.assertEqual(resumen.iloc[0]["cantidad_boletas"], 1)
+        self.assertEqual(resumen.iloc[0]["total_bruto"], 1000000)
+        self.assertEqual(resumen.iloc[0]["total_retenciones"], 152500)
+        self.assertEqual(resumen.iloc[0]["total_liquido"], 847500)
 
 if __name__ == "__main__":
     unittest.main()

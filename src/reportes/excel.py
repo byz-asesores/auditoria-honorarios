@@ -3,8 +3,7 @@ from io import BytesIO
 
 import pandas as pd
 from openpyxl.styles import Font, PatternFill, Alignment
-
-
+from validaciones.duplicados import obtener_indices_excluidos_de_totales
 COLUMNAS = [
     "numero",
     "fecha",
@@ -19,9 +18,16 @@ COLUMNAS = [
     "observaciones",
 ]
 
-
 def generar_resumen_receptores(resultados):
-    df = pd.DataFrame(resultados)
+    indices_excluidos = obtener_indices_excluidos_de_totales(resultados)
+
+    resultados_validos = [
+        boleta
+        for i, boleta in enumerate(resultados)
+        if i not in indices_excluidos
+    ]
+
+    df = pd.DataFrame(resultados_validos)
 
     columnas_resumen = [
         "rut_receptor",
@@ -47,7 +53,6 @@ def generar_resumen_receptores(resultados):
     return resumen[columnas_resumen]
 
 
-
 def generar_resumen_anual(resultados):
     columnas_resumen = [
         "anio",
@@ -59,7 +64,15 @@ def generar_resumen_anual(resultados):
         "total_liquido",
     ]
 
-    df = pd.DataFrame(resultados)
+    indices_excluidos = obtener_indices_excluidos_de_totales(resultados)
+
+    resultados_validos = [
+        boleta
+        for i, boleta in enumerate(resultados)
+        if i not in indices_excluidos
+    ]
+
+    df = pd.DataFrame(resultados_validos)
 
     if df.empty:
         return pd.DataFrame(columns=columnas_resumen)
