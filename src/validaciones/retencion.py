@@ -1,4 +1,6 @@
-from config import TASA_RETENCION, TOLERANCIA_PESOS
+﻿from datetime import datetime
+
+from config import TASAS_RETENCION, TOLERANCIA_PESOS
 
 
 def formatear_pesos(monto):
@@ -8,11 +10,40 @@ def formatear_pesos(monto):
 def retencion_esperada(boleta):
     if boleta["retiene_receptor"] == "NO":
         return 0
-    return round(boleta["monto_bruto"] * TASA_RETENCION)
+
+    fecha_texto = boleta["fecha"]
+    fecha = None
+
+    for formato in ("%d/%m/%Y", "%Y-%m-%d"):
+        try:
+            fecha = datetime.strptime(fecha_texto, formato)
+            break
+        except (TypeError, ValueError):
+            continue
+
+    if fecha is None:
+        raise ValueError(
+            f"Fecha de boleta inválida: {fecha_texto}. "
+            "Se esperaba DD/MM/AAAA o AAAA-MM-DD."
+        )
+
+    tasa = TASAS_RETENCION.get(fecha.year)
+
+    if tasa is None:
+        raise ValueError(
+            f"No existe una tasa de retención definida "
+            f"para el año {fecha.year}."
+        )
+
+    return round(boleta["monto_bruto"] * tasa)
 
 
 def validar_retencion(boleta):
-    esperada = retencion_esperada(boleta)
+    try:
+        esperada = retencion_esperada(boleta)
+    except ValueError as error:
+        return [str(error)]
+
     informada = boleta["retencion"]
 
     if abs(informada - esperada) > TOLERANCIA_PESOS:
